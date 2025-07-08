@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador de Facturas - Compucell</title>
+</head>
+<body>
+    <h1>Factura Compucell Technology</h1>
+    <form method="POST" action="/generar">
+        <h3>Datos del Cliente</h3>
+        Nombre: <input name="cliente"><br>
+        Cédula/RUC: <input name="cedula"><br>
+        Dirección: <input name="direccion"><br>
+        Teléfono: <input name="telefono"><br>
+        Fecha de Factura: <input type="date" name="fecha_factura"><br>
+        Fecha de Vencimiento: <input type="date" name="fecha_vencimiento"><br>
+        Forma de Pago: <input name="forma_pago"><br><br>
+
+        <h3>Productos (máx. 5)</h3>
+        {% for i in range(1, 6) %}
+            Producto {{ i }}:<br>
+            Descripción: <input name="descripcion{{i}}"> <br>
+            Unidades: <input type="number" name="unidades{{i}}" min="0"> <br>
+            Precio Unitario: <input type="number" step="0.01" name="precio{{i}}" min="0"> <br><br>
+        {% endfor %}
+
+        <button type="submit">Generar Factura</button>
+    </form>
+</body>
+</html>
