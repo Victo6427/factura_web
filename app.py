@@ -10,6 +10,15 @@ os.makedirs(FACTURAS_DIR, exist_ok=True)
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
+# Función para convertir tildes a formato RTF
+def convertir_rtf(texto):
+    rtf_dict = {
+        "á": "\\'e1", "é": "\\'e9", "í": "\\'ed", "ó": "\\'f3", "ú": "\\'fa",
+        "Á": "\\'c1", "É": "\\'c9", "Í": "\\'cd", "Ó": "\\'d3", "Ú": "\\'da",
+        "ñ": "\\'f1", "Ñ": "\\'d1"
+    }
+    return ''.join(rtf_dict.get(c, c) for c in texto)
+
 @app.route('/')
 def formulario():
     return render_template('formulario.html')
@@ -41,42 +50,42 @@ def generar():
 
     with open(nombre_archivo, "w", encoding="utf-8") as f:
         f.write("{\\rtf1\\ansi\\deff0\n")
-        f.write("\\fs28\\b COMPUCELL TECHNOLOGY \\b0\\line\n")
-        f.write("\\fs20\\line\n")
-        f.write("Dirección:\\tab Av. Leopoldo Freire y Washington, local 593\\line\n")
-        f.write("Ciudad:\\tab Riobamba, Chimborazo, Ecuador\\line\n")
-        f.write("Teléfono:\\tab 0982443963\\line\n")
-        f.write("Email:\\tab compucelltech@gmail.com\\line\n")
-        f.write("Factura No.:\\tab 001-001-00001234\\line\\line\n")
-
-        f.write("\\b DATOS DEL CLIENTE\\b0\\line\n")
-        f.write(f"Nombre:\\tab {cliente}\\line\n")
-        f.write(f"Cédula/RUC:\\tab {cedula}\\line\n")
-        f.write(f"Dirección:\\tab {direccion}\\line\n")
-        f.write(f"Teléfono:\\tab {telefono}\\line\n")
-        f.write(f"Fecha de Factura:\\tab {fecha_factura}\\line\n")
-        f.write(f"Fecha de Vencimiento:\\tab {fecha_vencimiento}\\line\n")
-        f.write("\\line\\line\n")
-
-        f.write("\\b DETALLE DE PRODUCTOS\\b0\\line\n")
-        f.write("Descripción\\tab Unidades\\tab Precio Unitario\\tab Total\\line\n")
-        f.write("------------------------------------------------------------\\line\n")
-        for d, u, p in productos:
-            total_linea = u * p
-            f.write(f"{d}\\tab {u}\\tab ${p:.2f}\\tab ${total_linea:.2f}\\line\n")
+        f.write("\\fs32\\b COMPUCELL TECHNOLOGY\\b0\\fs20\\line\n")
+        f.write("Direcci\\'f3n: Av. Leopoldo Freire y Washington, local 593\\line\n")
+        f.write("Ciudad: Riobamba, Chimborazo, Ecuador\\line\n")
+        f.write("Tel\\'e9fono: 0982443963\\line\n")
+        f.write("Email: compucelltech@gmail.com\\line\n")
+        f.write("Factura No.: 001-001-00001234\\line\n")
         f.write("\\line\n")
 
-        f.write(f"\\b SUBTOTAL:\\b0\\tab ${subtotal:.2f}\\line\n")
-        f.write(f"\\b IVA (12%):\\b0\\tab ${iva:.2f}\\line\n")
-        f.write(f"\\b TOTAL A PAGAR:\\b0\\tab ${total:.2f}\\line\\line\n")
-        f.write(f"\\b Forma de pago:\\b0\\tab {forma_pago}\\line\n")
-        f.write("\\line\\line\n")
+        f.write("\\b DATOS DEL CLIENTE\\b0\\line\n")
+        f.write(f"Nombre: {convertir_rtf(cliente)}\\line\n")
+        f.write(f"C\\'e9dula/RUC: {convertir_rtf(cedula)}\\line\n")
+        f.write(f"Direcci\\'f3n: {convertir_rtf(direccion)}\\line\n")
+        f.write(f"Tel\\'e9fono: {convertir_rtf(telefono)}\\line\n")
+        f.write(f"Fecha de Factura: {convertir_rtf(fecha_factura)}\\line\n")
+        f.write(f"Fecha de Vencimiento: {convertir_rtf(fecha_vencimiento)}\\line\n")
+        f.write("\\line\n")
 
-        f.write("\\b Gracias por su compra. ¡Esperamos volver a verte pronto!\\b0\\line\n")
+        f.write("\\b DETALLE DE PRODUCTOS\\b0\\line\n")
+        f.write("Descripci\\'f3n\\tab Unidades\\tab Precio Unitario\\tab Total\\line\n")
+        f.write("\\line\n")
+        for d, u, p in productos:
+            total_linea = u * p
+            f.write(f"{convertir_rtf(d)}\\tab {u}\\tab ${p:.2f}\\tab ${total_linea:.2f}\\line\n")
+        f.write("\\line\n")
+
+        f.write(f"\\b Subtotal:\\b0\\tab ${subtotal:.2f}\\line\n")
+        f.write(f"\\b IVA (12%):\\b0\\tab ${iva:.2f}\\line\n")
+        f.write(f"\\b Total a pagar:\\b0\\tab ${total:.2f}\\line\n")
+        f.write(f"\\b Forma de pago:\\b0\\tab {convertir_rtf(forma_pago)}\\line\n")
+        f.write("\\line\n")
+
+        f.write("Gracias por su compra. \\u161?Esperamos volver a verte pronto!\\line\n")
         f.write("}")
 
     return send_file(nombre_archivo, as_attachment=True)
 
 if __name__ == '__main__':
     webbrowser.open("http://localhost:5000")
-    app.run(debug=True,use_reloader=False)
+    app.run(debug=True, use_reloader=False)
