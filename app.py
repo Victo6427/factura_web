@@ -1,8 +1,15 @@
+import os
+import webbrowser
 from flask import Flask, render_template, request, send_file
 from datetime import datetime
-import os
 
-app = Flask(__name__)
+# Rutas seguras y dinámicas
+BASE_DIR = os.path.dirname(os.path.abspath(_file_))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+FACTURAS_DIR = os.path.join(BASE_DIR, 'facturas')
+os.makedirs(FACTURAS_DIR, exist_ok=True)
+
+app = Flask(_name_, template_folder=TEMPLATES_DIR)
 
 @app.route('/')
 def formulario():
@@ -18,9 +25,8 @@ def generar():
     fecha_vencimiento = request.form['fecha_vencimiento']
     forma_pago = request.form['forma_pago']
 
-    # Obtener productos
     productos = []
-    for i in range(1, 6):  # soporta hasta 5 productos
+    for i in range(1, 6):
         desc = request.form.get(f'descripcion{i}', '')
         if desc.strip() == "":
             continue
@@ -28,13 +34,13 @@ def generar():
         precio = float(request.form.get(f'precio{i}', 0.0))
         productos.append((desc, unidades, precio))
 
-    # Calcular totales
     subtotal = sum(u * p for _, u, p in productos)
     iva = subtotal * 0.12
     total = subtotal + iva
 
-    nombre_archivo = f"facturas/factura_{cliente.replace(' ', '')}{datetime.now().strftime('%Y%m%d%H%M%S')}.rtf"
-    with open(nombre_archivo, "w") as f:
+    nombre_archivo = os.path.join(FACTURAS_DIR, f"factura_{cliente.replace(' ', '')}{datetime.now().strftime('%Y%m%d%H%M%S')}.rtf")
+
+    with open(nombre_archivo, "w", encoding="utf-8") as f:
         f.write("{\\rtf1\\ansi\n")
         f.write("\\b COMPUCELL TECHNOLOGY \\b0\\line\n")
         f.write("Dirección: Av. Leopoldo Freire y Washington, local 593\\line\n")
@@ -59,9 +65,9 @@ def generar():
         f.write(f"Forma de pago: {forma_pago}\\line\n")
         f.write("Gracias por su compra. ¡Esperamos volver a verte pronto!\\line\n")
         f.write("}")
-    
+
     return send_file(nombre_archivo, as_attachment=True)
 
 if __name__ == '__main__':
-    os.makedirs('facturas', exist_ok=True)
+    webbrowser.open("http://localhost:5000")
     app.run(debug=True)
