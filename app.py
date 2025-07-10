@@ -1,6 +1,7 @@
 import os
 import webbrowser
 import smtplib
+from email.utils import make_msgid
 from email.message import EmailMessage
 from flask import Flask, render_template, request, send_file
 from datetime import datetime
@@ -88,7 +89,6 @@ def generar():
         f.write("Gracias por su compra. \\u161?Esperamos volver a verte pronto!\\line\n")
         f.write("}")
 
-    # Enviar por correo al cliente
     def enviar_factura_por_correo(destinatario, archivo_adjunto):
         remitente = "compucelltechnologic@gmail.com"
         contraseña = "fmlq ihxs tkvx cdyk"
@@ -97,24 +97,52 @@ def generar():
         mensaje['Subject'] = "Factura electrónica - Compucell Technology"
         mensaje['From'] = remitente
         mensaje['To'] = destinatario
-        mensaje.set_content(f"Estimado/a {cliente},\n\nAdjunto encontrará su factura generada por Compucell Technology.\n\nGracias por su compra.")
+
+        firma_cid = make_msgid(domain='compucell.com')[1:-1]
+
+        cuerpo_html = f"""
+        <html>
+        <body>
+            <p>Estimado/a <strong>{cliente}</strong>,</p>
+            <p>Adjunto encontrará su factura electrónica generada por <strong>Compucell Technology</strong>.</p>
+            <p style='color: #0ea5e9;'><strong>Gracias por su compra. Estamos para servirle.</strong></p>
+
+            <br><br>
+            <p style='font-size: 13px; font-family: Arial, sans-serif;'>
+              <img src='cid:{firma_cid}' width='160' style='margin-bottom: 10px;'><br>
+              <strong>Compucell Technology</strong><br>
+              <a href='mailto:compucelltechnologic@gmail.com'>compucelltechnologic@gmail.com</a><br>
+              +593 994138746<br>
+              Av. Leopoldo Freire y Washington, local 593, Riobamba, Chimborazo, Ecuador<br><br>
+              <strong style='color:#0ea5e9;'>¡Gracias por comprar en Compucell Technology!</strong><br>
+              <a href='https://forms.gle/R65kfigLb3kJNFcaA' target='_blank'>👉 Califica tu experiencia con nosotros</a>
+            </p>
+        </body>
+        </html>
+        """
+
+        mensaje.set_content("Adjunto su factura. Gracias por su compra.")
+        mensaje.add_alternative(cuerpo_html, subtype='html')
 
         with open(archivo_adjunto, 'rb') as f:
             contenido = f.read()
             mensaje.add_attachment(contenido, maintype='application', subtype='octet-stream', filename=os.path.basename(archivo_adjunto))
 
+        with open("firma.png", 'rb') as img:
+            mensaje.get_payload()[1].add_related(img.read(), maintype='image', subtype='png', cid=f"<{firma_cid}>")
+
         try:
             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
                 smtp.login(remitente, contraseña)
                 smtp.send_message(mensaje)
-            print("✅ Correo enviado al cliente.")
+            print("✅ Correo con firma y factura enviado.")
         except Exception as e:
             print(f"❌ Error al enviar el correo: {e}")
 
-    # Llamar a la función para enviar el correo
     enviar_factura_por_correo(correo, nombre_archivo)
 
     return send_file(nombre_archivo, as_attachment=True)
+
 if __name__ == '__main__':
     webbrowser.open("http://localhost:5000")
     app.run(debug=True, use_reloader=False)
