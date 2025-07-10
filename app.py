@@ -1,5 +1,7 @@
 import os
 import webbrowser
+import smtplib
+from email.message import EmailMessage
 from flask import Flask, render_template, request, send_file
 from datetime import datetime
 
@@ -29,6 +31,7 @@ def generar():
     cedula = request.form['cedula']
     direccion = request.form['direccion']
     telefono = request.form['telefono']
+    correo = request.form['correo']
     fecha_factura = request.form['fecha_factura']
     fecha_vencimiento = request.form['fecha_vencimiento']
     forma_pago = request.form['forma_pago']
@@ -59,12 +62,13 @@ def generar():
         f.write("\\line\n")
 
         f.write("\\b DATOS DEL CLIENTE\\b0\\line\n")
-        f.write(f"Nombre: {convertir_rtf(cliente)}\\line\n")
-        f.write(f"C\\'e9dula/RUC: {convertir_rtf(cedula)}\\line\n")
-        f.write(f"Direcci\\'f3n: {convertir_rtf(direccion)}\\line\n")
-        f.write(f"Tel\\'e9fono: {convertir_rtf(telefono)}\\line\n")
-        f.write(f"Fecha de Factura: {convertir_rtf(fecha_factura)}\\line\n")
-        f.write(f"Fecha de Vencimiento: {convertir_rtf(fecha_vencimiento)}\\line\n")
+        f.write(f"Nombre: {cliente}\\line\n")
+        f.write(f"C\\'e9dula/RUC: {cedula}\\line\n")
+        f.write(f"Direcci\\'f3n: {direccion}\\line\n")
+        f.write(f"Tel\\'e9fono: {telefono}\\line\n")
+        f.write(f"Correo: {correo}\\line\n")
+        f.write(f"Fecha de Factura: {fecha_factura}\\line\n")
+        f.write(f"Fecha de Vencimiento: {fecha_vencimiento}\\line\n")
         f.write("\\line\n")
 
         f.write("\\b DETALLE DE PRODUCTOS\\b0\\line\n")
@@ -72,20 +76,45 @@ def generar():
         f.write("\\line\n")
         for d, u, p in productos:
             total_linea = u * p
-            f.write(f"{convertir_rtf(d)}\\tab {u}\\tab ${p:.2f}\\tab ${total_linea:.2f}\\line\n")
+            f.write(f"{d}\\tab {u}\\tab ${p:.2f}\\tab ${total_linea:.2f}\\line\n")
         f.write("\\line\n")
 
         f.write(f"\\b Subtotal:\\b0\\tab ${subtotal:.2f}\\line\n")
         f.write(f"\\b IVA (12%):\\b0\\tab ${iva:.2f}\\line\n")
         f.write(f"\\b Total a pagar:\\b0\\tab ${total:.2f}\\line\n")
-        f.write(f"\\b Forma de pago:\\b0\\tab {convertir_rtf(forma_pago)}\\line\n")
+        f.write(f"\\b Forma de pago:\\b0\\tab {forma_pago}\\line\n")
         f.write("\\line\n")
 
         f.write("Gracias por su compra. \\u161?Esperamos volver a verte pronto!\\line\n")
         f.write("}")
 
-    return send_file(nombre_archivo, as_attachment=True)
+    # Enviar por correo al cliente
+    def enviar_factura_por_correo(destinatario, archivo_adjunto):
+        remitente = "compucelltechnologic@gmail.com"
+        contraseña = "fmlq ihxs tkvx cdyk"
 
+        mensaje = EmailMessage()
+        mensaje['Subject'] = "Factura electrónica - Compucell Technology"
+        mensaje['From'] = remitente
+        mensaje['To'] = destinatario
+        mensaje.set_content(f"Estimado/a {cliente},\n\nAdjunto encontrará su factura generada por Compucell Technology.\n\nGracias por su compra.")
+
+        with open(archivo_adjunto, 'rb') as f:
+            contenido = f.read()
+            mensaje.add_attachment(contenido, maintype='application', subtype='octet-stream', filename=os.path.basename(archivo_adjunto))
+
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                smtp.login(remitente, contraseña)
+                smtp.send_message(mensaje)
+            print("✅ Correo enviado al cliente.")
+        except Exception as e:
+            print(f"❌ Error al enviar el correo: {e}")
+
+    # Llamar a la función para enviar el correo
+    enviar_factura_por_correo(correo, nombre_archivo)
+
+    return send_file(nombre_archivo, as_attachment=True)
 if __name__ == '__main__':
     webbrowser.open("http://localhost:5000")
     app.run(debug=True, use_reloader=False)
